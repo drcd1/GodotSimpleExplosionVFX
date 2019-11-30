@@ -11,7 +11,11 @@ A very simple way to setup realistic explosions in the Godot game engine that re
 - Some software to assemble the animation into a spritesheet (I used Texture Packer - https://www.codeandweb.com/texturepacker )
 
 ## How to use
-- Open the project in GodotFiles/Explosion in Godot
+- Open the project in GodotFiles/Explosion in Godot.
+- Edit properties of the explosion by editing "material.tres".
+- Emission Fallof Multiplier and Emission Falloff control how fast the flames disappear.
+- Emission Color Ramp allows to modify the color of the flames.
+- Smoke Color Ramp allows to modify the color of the smoke.
 
 ### How to create your own sprites in Blender3D
 0. Open the file smoke.blend in Blender
