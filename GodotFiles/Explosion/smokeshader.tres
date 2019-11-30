@@ -1,4 +1,4 @@
-[gd_resource type="VisualShader" load_steps=28 format=2]
+[gd_resource type="VisualShader" load_steps=26 format=2]
 
 [ext_resource path="res://smokesprite.png" type="Texture" id=1]
 [ext_resource path="res://normal+.png" type="Texture" id=2]
@@ -21,7 +21,7 @@ operator = 2
 default_input_values = [ 0, 0.0, 1, 0.3 ]
 
 [sub_resource type="VisualShaderNodeScalarUniform" id=6]
-uniform_name = "Multiplier"
+uniform_name = "emission_falloff_multiplier"
 
 [sub_resource type="VisualShaderNodeTexture" id=7]
 texture = ExtResource( 2 )
@@ -35,9 +35,6 @@ operator = 1
 [sub_resource type="VisualShaderNodeTexture" id=10]
 texture = ExtResource( 1 )
 
-[sub_resource type="VisualShaderNodeExpression" id=11]
-expression = "a = COLOR.y;"
-
 [sub_resource type="VisualShaderNodeTextureUniform" id=12]
 uniform_name = "emission_falloff"
 texture_type = 1
@@ -48,8 +45,6 @@ input_name = "color"
 [sub_resource type="VisualShaderNodeExpression" id=14]
 expression = "uv.z = 0.0;
 uv.xy = vec2(color.y);"
-
-[sub_resource type="VisualShaderNodeColorFunc" id=15]
 
 [sub_resource type="VisualShaderNodeVectorInterp" id=16]
 
@@ -100,7 +95,7 @@ uniform float particle_h_frames;
 uniform float particle_v_frames;
 uniform bool particles_anim_loop;
 uniform sampler2D tex_frg_2;uniform sampler2D Smoke_color_ramp : hint_albedo;
-uniform float Multiplier;
+uniform float emission_falloff_multiplier;
 uniform sampler2D emission_falloff : hint_albedo;
 uniform sampler2D emission_color_ramp : hint_albedo;
 uniform sampler2D tex_frg_16;uniform sampler2D tex_frg_17;
@@ -183,7 +178,7 @@ void fragment() {
 
 // ScalarUniform:15
 	float n_out15p0;
-	n_out15p0 = Multiplier;
+	n_out15p0 = emission_falloff_multiplier;
 
 // Input:5
 	vec3 n_out5p0;
@@ -258,7 +253,7 @@ void light() {
 
 }
 "
-graph_offset = Vector2( 60, 325.25 )
+graph_offset = Vector2( -1215, 22 )
 nodes/vertex/0/position = Vector2( 500, 120 )
 nodes/vertex/2/node = SubResource( 18 )
 nodes/vertex/2/position = Vector2( -720, -140 )
@@ -302,25 +297,17 @@ nodes/vertex/connections = PoolIntArray( 3, 0, 2, 0, 6, 0, 2, 2, 5, 0, 2, 1, 7, 
 nodes/fragment/0/position = Vector2( 700, 180 )
 nodes/fragment/2/node = SubResource( 10 )
 nodes/fragment/2/position = Vector2( -1000, 40 )
-nodes/fragment/3/node = SubResource( 11 )
-nodes/fragment/3/position = Vector2( -720, 700 )
-nodes/fragment/3/size = Vector2( 262, 160 )
-nodes/fragment/3/input_ports = ""
-nodes/fragment/3/output_ports = "0,0,a;"
-nodes/fragment/3/expression = "a = COLOR.y;"
 nodes/fragment/4/node = SubResource( 12 )
-nodes/fragment/4/position = Vector2( -420, 680 )
+nodes/fragment/4/position = Vector2( -480, 560 )
 nodes/fragment/5/node = SubResource( 13 )
 nodes/fragment/5/position = Vector2( -1220, 500 )
 nodes/fragment/6/node = SubResource( 14 )
-nodes/fragment/6/position = Vector2( -1000, 520 )
+nodes/fragment/6/position = Vector2( -1060, 540 )
 nodes/fragment/6/size = Vector2( 456, 182 )
 nodes/fragment/6/input_ports = "0,1,color;"
 nodes/fragment/6/output_ports = "0,1,uv;"
 nodes/fragment/6/expression = "uv.z = 0.0;
 uv.xy = vec2(color.y);"
-nodes/fragment/7/node = SubResource( 15 )
-nodes/fragment/7/position = Vector2( -160, 700 )
 nodes/fragment/8/node = SubResource( 16 )
 nodes/fragment/8/position = Vector2( 80, 460 )
 nodes/fragment/9/node = SubResource( 17 )
@@ -343,5 +330,5 @@ nodes/fragment/17/node = SubResource( 8 )
 nodes/fragment/17/position = Vector2( 240, 920 )
 nodes/fragment/18/node = SubResource( 9 )
 nodes/fragment/18/position = Vector2( 460, 740 )
-nodes/fragment/connections = PoolIntArray( 2, 1, 0, 1, 6, 0, 4, 0, 5, 0, 6, 0, 4, 0, 7, 0, 2, 0, 10, 0, 10, 0, 9, 0, 9, 0, 0, 0, 11, 0, 12, 0, 4, 0, 13, 1, 10, 0, 14, 0, 14, 0, 11, 0, 15, 0, 13, 0, 13, 0, 14, 1, 12, 0, 0, 5, 16, 0, 18, 0, 17, 0, 18, 1, 18, 0, 0, 7 )
+nodes/fragment/connections = PoolIntArray( 2, 1, 0, 1, 6, 0, 4, 0, 5, 0, 6, 0, 2, 0, 10, 0, 10, 0, 9, 0, 9, 0, 0, 0, 11, 0, 12, 0, 4, 0, 13, 1, 10, 0, 14, 0, 14, 0, 11, 0, 15, 0, 13, 0, 13, 0, 14, 1, 12, 0, 0, 5, 16, 0, 18, 0, 17, 0, 18, 1, 18, 0, 0, 7 )
 nodes/light/0/position = Vector2( 260, 120 )
