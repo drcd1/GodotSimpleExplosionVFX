@@ -1,4 +1,5 @@
 # Godot Explosion VFX
+(COMING SOON: .blend files to make the sprites)
 
 A very simple way to setup realistic explosions in the Godot game engine that react to lighting.
 ![](demo.gif)
