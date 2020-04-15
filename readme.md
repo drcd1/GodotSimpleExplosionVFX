@@ -18,7 +18,7 @@ A very simple way to setup realistic explosions in the Godot game engine that re
 - Smoke Color Ramp allows to modify the color of the smoke.
 
 ### How to create your own sprites in Blender3D
-0. Open the file smoke.blend in Blender
+0. Open the file smoke.blend in Blender (Note: the file will be provided soon in this repository)
 
 1. Select the domain Smoke Domain in the main scene, go to the physics tab and hit bake.
 
