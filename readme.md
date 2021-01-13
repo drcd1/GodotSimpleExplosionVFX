@@ -23,7 +23,7 @@ A very simple way to setup realistic explosions in the Godot game engine that re
 
 2. In the outliner, make sure the "Scene" and "AreaLight" collections are enabled, and "normals+" and "normals-" are disabled. Render the animation.
 
-3. In the Render tab, in Color Management, set "Display Device" to "None".
+3. In the Render tab, in Color Management, set "Display Device" to "None". In "Film", uncheck the "Transparent" checkbox.
 
 3. Change the render output folder to "normals+", disable the "Area" collection and enable "normals+" collection. Render the animation.
 
