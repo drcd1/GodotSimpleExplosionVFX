@@ -1,4 +1,4 @@
-[gd_resource type="VisualShader" load_steps=26 format=2]
+[gd_resource type="VisualShader" load_steps=32 format=2]
 
 [ext_resource path="res://smokesprite.png" type="Texture" id=1]
 [ext_resource path="res://normal+.png" type="Texture" id=2]
@@ -32,27 +32,61 @@ texture = ExtResource( 3 )
 [sub_resource type="VisualShaderNodeVectorOp" id=9]
 operator = 1
 
-[sub_resource type="VisualShaderNodeTexture" id=10]
+[sub_resource type="VisualShaderNodeExpression" id=10]
+size = Vector2( 822.8, 299.6 )
+expression = "float depth = textureLod(DEPTH_TEXTURE, SCREEN_UV, 0.0).r;
+vec4 upos = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+float pixel_position = upos.z / upos.w;
+
+vec4 zpos = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, FRAGCOORD.z * 2.0 - 1.0, 1.0);
+float cur_pos = zpos.z/zpos.w;
+soft_limit = soft_limit+(1.0-blend)*blend_scale;
+float help = clamp(abs(cur_pos-pixel_position)*(1.0/soft_limit),0.0,1.0);
+alpha_opacity = help;
+//if (abs(cur_pos-pixel_position)<blend_scale*(1.0-blend))
+//	alpha_opacity = 0.0;
+//else
+//	alpha_opacity = 1.0;"
+
+[sub_resource type="VisualShaderNodeTexture" id=11]
 texture = ExtResource( 1 )
 
-[sub_resource type="VisualShaderNodeTextureUniform" id=12]
+[sub_resource type="VisualShaderNodeScalarOp" id=12]
+default_input_values = [ 0, 0.0, 1, 0.3 ]
+operator = 2
+
+[sub_resource type="VisualShaderNodeTextureUniform" id=13]
+uniform_name = "blend_help"
+
+[sub_resource type="VisualShaderNodeScalarUniform" id=14]
+uniform_name = "Soft_limit"
+
+[sub_resource type="VisualShaderNodeScalarUniform" id=15]
+uniform_name = "blend_scale"
+
+[sub_resource type="VisualShaderNodeTextureUniform" id=16]
 uniform_name = "emission_falloff"
 texture_type = 1
 
-[sub_resource type="VisualShaderNodeInput" id=13]
+[sub_resource type="VisualShaderNodeInput" id=17]
 input_name = "color"
 
-[sub_resource type="VisualShaderNodeExpression" id=14]
+[sub_resource type="VisualShaderNodeExpression" id=18]
+size = Vector2( 456, 182 )
 expression = "uv.z = 0.0;
 uv.xy = vec2(color.y);"
 
-[sub_resource type="VisualShaderNodeVectorInterp" id=16]
+[sub_resource type="VisualShaderNodeVectorInterp" id=19]
 
-[sub_resource type="VisualShaderNodeTextureUniform" id=17]
+[sub_resource type="VisualShaderNodeTextureUniform" id=20]
 uniform_name = "Smoke_color_ramp"
 texture_type = 1
 
-[sub_resource type="VisualShaderNodeExpression" id=18]
+[sub_resource type="VisualShaderNodeScalarUniform" id=21]
+uniform_name = "still_frame"
+
+[sub_resource type="VisualShaderNodeExpression" id=22]
+size = Vector2( 727, 625 )
 expression = "mat4 mat_world = mat4(normalize(CAMERA_MATRIX[0])*length(WORLD_MATRIX[0]),normalize(CAMERA_MATRIX[1])*length(WORLD_MATRIX[0]),normalize(CAMERA_MATRIX[2])*length(WORLD_MATRIX[2]),WORLD_MATRIX[3]);
 //mat_world = mat_world * mat4( vec4(cos(INSTANCE_CUSTOM.x),-sin(INSTANCE_CUSTOM.x), 0.0, 0.0), vec4(sin(INSTANCE_CUSTOM.x), cos(INSTANCE_CUSTOM.x), 0.0, 0.0),vec4(0.0, 0.0, 1.0, 0.0),vec4(0.0, 0.0, 0.0, 1.0));
 MODELVIEW_MATRIX = INV_CAMERA_MATRIX * mat_world;
@@ -61,7 +95,9 @@ float h_frames = float(particles_anim_h_frames);
 float v_frames = float(particles_anim_v_frames);
 float particle_total_frames = float(particles_anim_h_frames * particles_anim_v_frames);
 float particle_frame = floor(INSTANCE_CUSTOM.y * float(particle_total_frames));
-if (!particles_anim_loop) {
+if(still_frame > -0.01f){
+	particle_frame = floor(still_frame);
+}else if (!particles_anim_loop) {
 	particle_frame = clamp(particle_frame, 0.0, particle_total_frames - 1.0);
 } else {
 	particle_frame = mod(particle_frame, particle_total_frames);
@@ -71,60 +107,68 @@ UV += vec2(mod(particle_frame, h_frames) / h_frames, floor(particle_frame / h_fr
 		
 c=INSTANCE_CUSTOM.xyz;"
 
-[sub_resource type="VisualShaderNodeInput" id=19]
+[sub_resource type="VisualShaderNodeInput" id=23]
 input_name = "vertex"
 
-[sub_resource type="VisualShaderNodeScalarUniform" id=20]
+[sub_resource type="VisualShaderNodeScalarUniform" id=24]
 uniform_name = "particle_h_frames"
 
-[sub_resource type="VisualShaderNodeScalarUniform" id=21]
+[sub_resource type="VisualShaderNodeScalarUniform" id=25]
 uniform_name = "particle_v_frames"
 
-[sub_resource type="VisualShaderNodeBooleanUniform" id=22]
+[sub_resource type="VisualShaderNodeBooleanUniform" id=26]
 uniform_name = "particles_anim_loop"
 
-[sub_resource type="VisualShaderNodeInput" id=23]
+[sub_resource type="VisualShaderNodeInput" id=27]
 input_name = "time"
 
-[sub_resource type="VisualShaderNodeExpression" id=24]
+[sub_resource type="VisualShaderNodeExpression" id=28]
+size = Vector2( 250, 150 )
 expression = "v = INSTANCE_CUSTOM.xyz;"
 
 [resource]
 code = "shader_type spatial;
+render_mode depth_draw_never, specular_schlick_ggx;
+
 uniform float particle_h_frames;
 uniform float particle_v_frames;
 uniform bool particles_anim_loop;
-uniform sampler2D tex_frg_2;uniform sampler2D Smoke_color_ramp : hint_albedo;
+uniform float still_frame;
+uniform sampler2D tex_frg_2;
+uniform sampler2D Smoke_color_ramp : hint_albedo;
+uniform sampler2D blend_help;
+uniform float Soft_limit;
+uniform float blend_scale;
 uniform float emission_falloff_multiplier;
 uniform sampler2D emission_falloff : hint_albedo;
 uniform sampler2D emission_color_ramp : hint_albedo;
-uniform sampler2D tex_frg_16;uniform sampler2D tex_frg_17;
+uniform sampler2D tex_frg_16;
+uniform sampler2D tex_frg_17;
+
 
 
 void vertex() {
 // Input:3
-	vec3 n_out3p0;
-	n_out3p0 = VERTEX;
+	vec3 n_out3p0 = VERTEX;
 
 // ScalarUniform:5
-	float n_out5p0;
-	n_out5p0 = particle_h_frames;
+	float n_out5p0 = particle_h_frames;
 
 // ScalarUniform:6
-	float n_out6p0;
-	n_out6p0 = particle_v_frames;
+	float n_out6p0 = particle_v_frames;
 
 // BooleanUniform:7
-	bool n_out7p0;
-	n_out7p0 = particles_anim_loop;
+	bool n_out7p0 = particles_anim_loop;
 
 // Input:8
-	float n_out8p0;
-	n_out8p0 = TIME;
+	float n_out8p0 = TIME;
+
+// ScalarUniform:10
+	float n_out10p0 = still_frame;
 
 // Expression:2
 	vec3 n_out2p0;
-	n_out2p0=vec3(0.0, 0.0, 0.0);
+	n_out2p0 = vec3(0.0, 0.0, 0.0);
 	{
 		mat4 mat_world = mat4(normalize(CAMERA_MATRIX[0])*length(WORLD_MATRIX[0]),normalize(CAMERA_MATRIX[1])*length(WORLD_MATRIX[0]),normalize(CAMERA_MATRIX[2])*length(WORLD_MATRIX[2]),WORLD_MATRIX[3]);
 		//mat_world = mat_world * mat4( vec4(cos(INSTANCE_CUSTOM.x),-sin(INSTANCE_CUSTOM.x), 0.0, 0.0), vec4(sin(INSTANCE_CUSTOM.x), cos(INSTANCE_CUSTOM.x), 0.0, 0.0),vec4(0.0, 0.0, 1.0, 0.0),vec4(0.0, 0.0, 0.0, 1.0));
@@ -134,7 +178,9 @@ void vertex() {
 		float v_frames = float(n_out6p0);
 		float particle_total_frames = float(n_out5p0 * n_out6p0);
 		float particle_frame = floor(INSTANCE_CUSTOM.y * float(particle_total_frames));
-		if (!n_out7p0) {
+		if(n_out10p0 > -0.01f){
+			particle_frame = floor(n_out10p0);
+		}else if (!n_out7p0) {
 			particle_frame = clamp(particle_frame, 0.0, particle_total_frames - 1.0);
 		} else {
 			particle_frame = mod(particle_frame, particle_total_frames);
@@ -144,6 +190,7 @@ void vertex() {
 				
 		n_out2p0=INSTANCE_CUSTOM.xyz;
 	}
+
 // Output:0
 	COLOR.rgb = n_out2p0;
 
@@ -151,11 +198,9 @@ void vertex() {
 
 void fragment() {
 // Texture:2
-	vec3 n_out2p0;
-	float n_out2p1;
-	vec4 tex_frg_2_read = texture( tex_frg_2 , UV.xy );
-	n_out2p0 = tex_frg_2_read.rgb;
-	n_out2p1 = tex_frg_2_read.a;
+	vec4 tex_frg_2_read = texture(tex_frg_2, UV.xy);
+	vec3 n_out2p0 = tex_frg_2_read.rgb;
+	float n_out2p1 = tex_frg_2_read.a;
 
 // ColorFunc:10
 	vec3 n_out10p0;
@@ -171,78 +216,106 @@ void fragment() {
 	vec3 n_out9p0;
 	float n_out9p1;
 	{
-		vec4 n_tex_read = texture( Smoke_color_ramp , n_out10p0.xy );
+		vec4 n_tex_read = texture(Smoke_color_ramp, n_out10p0.xy);
 		n_out9p0 = n_tex_read.rgb;
 		n_out9p1 = n_tex_read.a;
 	}
 
+// TextureUniform:21
+	vec3 n_out21p0;
+	float n_out21p1;
+	{
+		vec4 n_tex_read = texture(blend_help, n_out10p0.xy);
+		n_out21p0 = n_tex_read.rgb;
+		n_out21p1 = n_tex_read.a;
+	}
+
+// ScalarUniform:22
+	float n_out22p0 = Soft_limit;
+
+// ScalarUniform:23
+	float n_out23p0 = blend_scale;
+
+// Expression:19
+	float n_out19p0;
+	n_out19p0 = 0.0;
+	{
+		float depth = textureLod(DEPTH_TEXTURE, SCREEN_UV, 0.0).r;
+		vec4 upos = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+		float pixel_position = upos.z / upos.w;
+		
+		vec4 zpos = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, FRAGCOORD.z * 2.0 - 1.0, 1.0);
+		float cur_pos = zpos.z/zpos.w;
+		n_out22p0 = n_out22p0+(1.0-dot(n_out21p0, vec3(0.333333, 0.333333, 0.333333)))*n_out23p0;
+		float help = clamp(abs(cur_pos-pixel_position)*(1.0/n_out22p0),0.0,1.0);
+		n_out19p0 = help;
+		//if (abs(cur_pos-pixel_position)<blend_scale*(1.0-dot(n_out21p0, vec3(0.333333, 0.333333, 0.333333))))
+		//	n_out19p0 = 0.0;
+		//else
+		//	n_out19p0 = 1.0;
+	}
+
+// ScalarOp:20
+	float n_out20p0 = n_out2p1 * n_out19p0;
+
 // ScalarUniform:15
-	float n_out15p0;
-	n_out15p0 = emission_falloff_multiplier;
+	float n_out15p0 = emission_falloff_multiplier;
 
 // Input:5
-	vec3 n_out5p0;
-	n_out5p0 = COLOR.rgb;
+	vec3 n_out5p0 = COLOR.rgb;
 
 // Expression:6
 	vec3 n_out6p0;
-	n_out6p0=vec3(0.0, 0.0, 0.0);
+	n_out6p0 = vec3(0.0, 0.0, 0.0);
 	{
 		n_out6p0.z = 0.0;
 		n_out6p0.xy = vec2(n_out5p0.y);
 	}
+
 // TextureUniform:4
 	vec3 n_out4p0;
 	float n_out4p1;
 	{
-		vec4 n_tex_read = texture( emission_falloff , n_out6p0.xy );
+		vec4 n_tex_read = texture(emission_falloff, n_out6p0.xy);
 		n_out4p0 = n_tex_read.rgb;
 		n_out4p1 = n_tex_read.a;
 	}
 
 // ScalarOp:13
-	float n_out13p0;
-	n_out13p0 = n_out15p0 * dot(n_out4p0,vec3(0.333333,0.333333,0.333333));
+	float n_out13p0 = n_out15p0 * dot(n_out4p0, vec3(0.333333, 0.333333, 0.333333));
 
 // ScalarOp:14
-	float n_out14p0;
-	n_out14p0 = dot(n_out10p0,vec3(0.333333,0.333333,0.333333)) + n_out13p0;
+	float n_out14p0 = dot(n_out10p0, vec3(0.333333, 0.333333, 0.333333)) + n_out13p0;
 
 // TextureUniform:11
 	vec3 n_out11p0;
 	float n_out11p1;
 	{
-		vec4 n_tex_read = texture( emission_color_ramp , vec3(n_out14p0).xy );
+		vec4 n_tex_read = texture(emission_color_ramp, vec3(n_out14p0).xy);
 		n_out11p0 = n_tex_read.rgb;
 		n_out11p1 = n_tex_read.a;
 	}
 
 // VectorOp:12
-	vec3 n_in12p1 = vec3(5.00000,5.00000,5.00000);
-	vec3 n_out12p0;
-	n_out12p0 = n_out11p0 * n_in12p1;
+	vec3 n_in12p1 = vec3(5.00000, 5.00000, 5.00000);
+	vec3 n_out12p0 = n_out11p0 * n_in12p1;
 
 // Texture:16
-	vec3 n_out16p0;
-	float n_out16p1;
-	vec4 tex_frg_16_read = texture( tex_frg_16 , UV.xy );
-	n_out16p0 = tex_frg_16_read.rgb;
-	n_out16p1 = tex_frg_16_read.a;
+	vec4 tex_frg_16_read = texture(tex_frg_16, UV.xy);
+	vec3 n_out16p0 = tex_frg_16_read.rgb;
+	float n_out16p1 = tex_frg_16_read.a;
 
 // Texture:17
-	vec3 n_out17p0;
-	float n_out17p1;
-	vec4 tex_frg_17_read = texture( tex_frg_17 , UV.xy );
-	n_out17p0 = tex_frg_17_read.rgb;
-	n_out17p1 = tex_frg_17_read.a;
+	vec4 tex_frg_17_read = texture(tex_frg_17, UV.xy);
+	vec3 n_out17p0 = tex_frg_17_read.rgb;
+	float n_out17p1 = tex_frg_17_read.a;
 
 // VectorOp:18
-	vec3 n_out18p0;
-	n_out18p0 = n_out16p0 - n_out17p0;
+	vec3 n_out18p0 = n_out16p0 - n_out17p0;
 
 // Output:0
 	ALBEDO = n_out9p0;
-	ALPHA = n_out2p1;
+	ALPHA = n_out20p0;
 	EMISSION = n_out12p0;
 	NORMAL = n_out18p0;
 
@@ -253,12 +326,13 @@ void light() {
 
 }
 "
-graph_offset = Vector2( -1215, 22 )
+graph_offset = Vector2( -1446.84, -698.3 )
+modes/depth_draw = 2
 nodes/vertex/0/position = Vector2( 500, 120 )
-nodes/vertex/2/node = SubResource( 18 )
+nodes/vertex/2/node = SubResource( 22 )
 nodes/vertex/2/position = Vector2( -720, -140 )
 nodes/vertex/2/size = Vector2( 727, 625 )
-nodes/vertex/2/input_ports = "0,1,v;1,0,particles_anim_h_frames;2,0,particles_anim_v_frames;3,2,particles_anim_loop;4,0,time;"
+nodes/vertex/2/input_ports = "0,1,v;1,0,particles_anim_h_frames;2,0,particles_anim_v_frames;3,2,particles_anim_loop;4,0,time;5,0,still_frame;"
 nodes/vertex/2/output_ports = "0,1,c;"
 nodes/vertex/2/expression = "mat4 mat_world = mat4(normalize(CAMERA_MATRIX[0])*length(WORLD_MATRIX[0]),normalize(CAMERA_MATRIX[1])*length(WORLD_MATRIX[0]),normalize(CAMERA_MATRIX[2])*length(WORLD_MATRIX[2]),WORLD_MATRIX[3]);
 //mat_world = mat_world * mat4( vec4(cos(INSTANCE_CUSTOM.x),-sin(INSTANCE_CUSTOM.x), 0.0, 0.0), vec4(sin(INSTANCE_CUSTOM.x), cos(INSTANCE_CUSTOM.x), 0.0, 0.0),vec4(0.0, 0.0, 1.0, 0.0),vec4(0.0, 0.0, 0.0, 1.0));
@@ -268,7 +342,9 @@ float h_frames = float(particles_anim_h_frames);
 float v_frames = float(particles_anim_v_frames);
 float particle_total_frames = float(particles_anim_h_frames * particles_anim_v_frames);
 float particle_frame = floor(INSTANCE_CUSTOM.y * float(particle_total_frames));
-if (!particles_anim_loop) {
+if(still_frame > -0.01f){
+	particle_frame = floor(still_frame);
+}else if (!particles_anim_loop) {
 	particle_frame = clamp(particle_frame, 0.0, particle_total_frames - 1.0);
 } else {
 	particle_frame = mod(particle_frame, particle_total_frames);
@@ -277,43 +353,45 @@ UV /= vec2(h_frames, v_frames);
 UV += vec2(mod(particle_frame, h_frames) / h_frames, floor(particle_frame / h_frames) / v_frames);
 		
 c=INSTANCE_CUSTOM.xyz;"
-nodes/vertex/3/node = SubResource( 19 )
+nodes/vertex/3/node = SubResource( 23 )
 nodes/vertex/3/position = Vector2( -1200, -320 )
-nodes/vertex/5/node = SubResource( 20 )
+nodes/vertex/5/node = SubResource( 24 )
 nodes/vertex/5/position = Vector2( -1080, -380 )
-nodes/vertex/6/node = SubResource( 21 )
+nodes/vertex/6/node = SubResource( 25 )
 nodes/vertex/6/position = Vector2( -1140, -100 )
-nodes/vertex/7/node = SubResource( 22 )
-nodes/vertex/7/position = Vector2( -1020, 40 )
-nodes/vertex/8/node = SubResource( 23 )
+nodes/vertex/7/node = SubResource( 26 )
+nodes/vertex/7/position = Vector2( -1120, -20 )
+nodes/vertex/8/node = SubResource( 27 )
 nodes/vertex/8/position = Vector2( -1060, -220 )
-nodes/vertex/9/node = SubResource( 24 )
+nodes/vertex/9/node = SubResource( 28 )
 nodes/vertex/9/position = Vector2( 40, 200 )
 nodes/vertex/9/size = Vector2( 250, 150 )
 nodes/vertex/9/input_ports = ""
 nodes/vertex/9/output_ports = "0,1,v;"
 nodes/vertex/9/expression = "v = INSTANCE_CUSTOM.xyz;"
-nodes/vertex/connections = PoolIntArray( 3, 0, 2, 0, 6, 0, 2, 2, 5, 0, 2, 1, 7, 0, 2, 3, 8, 0, 2, 4, 2, 0, 0, 6 )
+nodes/vertex/10/node = SubResource( 21 )
+nodes/vertex/10/position = Vector2( -1024.74, 141.5 )
+nodes/vertex/connections = PoolIntArray( 3, 0, 2, 0, 6, 0, 2, 2, 5, 0, 2, 1, 7, 0, 2, 3, 8, 0, 2, 4, 2, 0, 0, 6, 10, 0, 2, 5 )
 nodes/fragment/0/position = Vector2( 700, 180 )
-nodes/fragment/2/node = SubResource( 10 )
-nodes/fragment/2/position = Vector2( -1000, 40 )
-nodes/fragment/4/node = SubResource( 12 )
+nodes/fragment/2/node = SubResource( 11 )
+nodes/fragment/2/position = Vector2( -1380, -120 )
+nodes/fragment/4/node = SubResource( 16 )
 nodes/fragment/4/position = Vector2( -480, 560 )
-nodes/fragment/5/node = SubResource( 13 )
-nodes/fragment/5/position = Vector2( -1220, 500 )
-nodes/fragment/6/node = SubResource( 14 )
+nodes/fragment/5/node = SubResource( 17 )
+nodes/fragment/5/position = Vector2( -1400, 580 )
+nodes/fragment/6/node = SubResource( 18 )
 nodes/fragment/6/position = Vector2( -1060, 540 )
 nodes/fragment/6/size = Vector2( 456, 182 )
 nodes/fragment/6/input_ports = "0,1,color;"
 nodes/fragment/6/output_ports = "0,1,uv;"
 nodes/fragment/6/expression = "uv.z = 0.0;
 uv.xy = vec2(color.y);"
-nodes/fragment/8/node = SubResource( 16 )
+nodes/fragment/8/node = SubResource( 19 )
 nodes/fragment/8/position = Vector2( 80, 460 )
-nodes/fragment/9/node = SubResource( 17 )
-nodes/fragment/9/position = Vector2( -360, 0 )
+nodes/fragment/9/node = SubResource( 20 )
+nodes/fragment/9/position = Vector2( -480, -60 )
 nodes/fragment/10/node = SubResource( 1 )
-nodes/fragment/10/position = Vector2( -740, 240 )
+nodes/fragment/10/position = Vector2( -1140, 140 )
 nodes/fragment/11/node = SubResource( 2 )
 nodes/fragment/11/position = Vector2( -220, 220 )
 nodes/fragment/12/node = SubResource( 3 )
@@ -330,5 +408,31 @@ nodes/fragment/17/node = SubResource( 8 )
 nodes/fragment/17/position = Vector2( 240, 920 )
 nodes/fragment/18/node = SubResource( 9 )
 nodes/fragment/18/position = Vector2( 460, 740 )
-nodes/fragment/connections = PoolIntArray( 2, 1, 0, 1, 6, 0, 4, 0, 5, 0, 6, 0, 2, 0, 10, 0, 10, 0, 9, 0, 9, 0, 0, 0, 11, 0, 12, 0, 4, 0, 13, 1, 10, 0, 14, 0, 14, 0, 11, 0, 15, 0, 13, 0, 13, 0, 14, 1, 12, 0, 0, 5, 16, 0, 18, 0, 17, 0, 18, 1, 18, 0, 0, 7 )
+nodes/fragment/19/node = SubResource( 10 )
+nodes/fragment/19/position = Vector2( -1380, -600 )
+nodes/fragment/19/size = Vector2( 822.8, 299.6 )
+nodes/fragment/19/input_ports = "0,0,blend;1,0,soft_limit;2,0,blend_scale;"
+nodes/fragment/19/output_ports = "0,0,alpha_opacity;"
+nodes/fragment/19/expression = "float depth = textureLod(DEPTH_TEXTURE, SCREEN_UV, 0.0).r;
+vec4 upos = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+float pixel_position = upos.z / upos.w;
+
+vec4 zpos = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, FRAGCOORD.z * 2.0 - 1.0, 1.0);
+float cur_pos = zpos.z/zpos.w;
+soft_limit = soft_limit+(1.0-blend)*blend_scale;
+float help = clamp(abs(cur_pos-pixel_position)*(1.0/soft_limit),0.0,1.0);
+alpha_opacity = help;
+//if (abs(cur_pos-pixel_position)<blend_scale*(1.0-blend))
+//	alpha_opacity = 0.0;
+//else
+//	alpha_opacity = 1.0;"
+nodes/fragment/20/node = SubResource( 12 )
+nodes/fragment/20/position = Vector2( -260, 100 )
+nodes/fragment/21/node = SubResource( 13 )
+nodes/fragment/21/position = Vector2( -1000, -120 )
+nodes/fragment/22/node = SubResource( 14 )
+nodes/fragment/22/position = Vector2( -1460, -460 )
+nodes/fragment/23/node = SubResource( 15 )
+nodes/fragment/23/position = Vector2( -1480, -340 )
+nodes/fragment/connections = PoolIntArray( 6, 0, 4, 0, 5, 0, 6, 0, 2, 0, 10, 0, 10, 0, 9, 0, 9, 0, 0, 0, 11, 0, 12, 0, 4, 0, 13, 1, 10, 0, 14, 0, 14, 0, 11, 0, 15, 0, 13, 0, 13, 0, 14, 1, 12, 0, 0, 5, 16, 0, 18, 0, 17, 0, 18, 1, 18, 0, 0, 7, 2, 1, 20, 0, 20, 0, 0, 1, 19, 0, 20, 1, 10, 0, 21, 0, 22, 0, 19, 1, 21, 0, 19, 0, 23, 0, 19, 2 )
 nodes/light/0/position = Vector2( 260, 120 )
