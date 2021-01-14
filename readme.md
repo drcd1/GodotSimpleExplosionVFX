@@ -2,9 +2,8 @@
 
 A very simple way to setup realistic explosions in the Godot game engine that react to lighting.
 
-![](demo.gif =256x)
-
-![](demo2.gif =256x)
+<img width="75%" alt="Explosion Gif 1" src="demo.gif">
+<img width="75%" alt=""Explosion Gif 2" src="demo2.gif">
 
 ## Dependencies
 - Godot 3.2.3 (https://godotengine.org/)
