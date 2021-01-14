@@ -1,7 +1,11 @@
 # Godot Explosion VFX
 
 A very simple way to setup realistic explosions in the Godot game engine that react to lighting.
-![](demo.gif)
+
+![](demo.gif =256x)
+
+![](demo2.gif =256x)
+
 ## Dependencies
 - Godot 3.2.3 (https://godotengine.org/)
 
